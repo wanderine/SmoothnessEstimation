@@ -9,7 +9,7 @@ addpath('D:\Smoothness_estimation\Data\func');
 addpath('D:\spm8');
 
 % Loop over subjects
-for file_number = 1:11
+for file_number = 1:1
     
     tic
     
@@ -81,15 +81,13 @@ for file_number = 1:11
     %% SMOOTHING
     %--------------------------------------------------------------------------
     
-    %smoothings = 4:16;
-    smoothings = 4:2:16;
-    %for smoothing = 1:13
-    for smoothing = 1:7
+    smoothings = 1:16;
+    
+    for smoothing = 1:16
         pjobs{2}.spatial{2 + smoothing - 1}.smooth.data = editfilenames(f,'prefix','r');
         pjobs{2}.spatial{2 + smoothing - 1}.smooth.fwhm = [smoothings(smoothing) smoothings(smoothing) smoothings(smoothing)];
         pjobs{2}.spatial{2 + smoothing - 1}.smooth.prefix = ['s' num2str(smoothings(smoothing))];
     end
-    smoothing_saves = [1 3 5 7 9 11 13];
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% FINISH
@@ -112,9 +110,7 @@ for file_number = 1:11
     if error1 == 0
         
         for exp = 1:1
-            %for smoothing = 1:13
-            for smoothing = 1:7
-                smoothing_save = smoothing_saves(smoothing);
+            for smoothing = 1:17
                 
                 clear jobs
                 jobs{1}.util{1}.cdir.directory = cellstr(data_path);
@@ -123,20 +119,9 @@ for file_number = 1:11
                 spm_file = fullfile('D:\Smoothness_estimation\Data\func_only_1\classical','SPM.mat');
                 if exist(spm_file,'file')==2
                     %system(['rm' spm_file]);
-                    %delete('D:\Smoothness_estimation\Data\func_only_1\classical\SPM.mat')
-                    
-                    if file_number < 10
-                        movefile('D:\Smoothness_estimation\Data\func_only_1\classical\SPM.mat',['D:\Smoothness_estimation\Results\SPM_000' num2str(file_number) '_smoothing' num2str(smoothings(smoothing)) 'mm.mat'  ])
-                    elseif file_number < 100
-                        movefile('D:\Smoothness_estimation\Data\func_only_1\classical\SPM.mat',['D:\Smoothness_estimation\Results\SPM_00' num2str(file_number) '_smoothing' num2str(smoothings(smoothing)) 'mm.mat'  ])
-                    elseif file_number < 1000
-                        movefile('D:\Smoothness_estimation\Data\func_only_1\classical\SPM.mat',['D:\Smoothness_estimation\Results\SPM_0' num2str(file_number) '_smoothing' num2str(smoothings(smoothing)) 'mm.mat'  ])
-                    else
-                        movefile('D:\Smoothness_estimation\Data\func_only_1\classical\SPM.mat',['D:\Smoothness_estimation\Results\SPM_' num2str(file_number) '_smoothing' num2str(smoothings(smoothing)) 'mm.mat'  ])
-                    end
-                    
+                    delete('D:\Smoothness_estimation\Data\func_only_1\classical\SPM.mat')
                 end
-                
+               
                 %% OUTPUT DIRECTORY
                 %--------------------------------------------------------------------------
                 jobs{1}.util{1}.md.basedir = cellstr(data_path);
@@ -147,7 +132,12 @@ for file_number = 1:11
                 jobs{2}.stats{1}.fmri_spec.dir = cellstr(fullfile(data_path,'classical'));
                 jobs{2}.stats{1}.fmri_spec.timing.units = 'secs';
                 jobs{2}.stats{1}.fmri_spec.timing.RT = TR;
-                jobs{2}.stats{1}.fmri_spec.sess.scans = editfilenames(f,'prefix',['s' num2str(smoothings(smoothing)) 'r']);
+                if smoothing == 17
+                    % Use unsmoothed data
+                    jobs{2}.stats{1}.fmri_spec.sess.scans = editfilenames(f,'prefix','r');
+                else
+                    jobs{2}.stats{1}.fmri_spec.sess.scans = editfilenames(f,'prefix',['s' num2str(smoothings(smoothing)) 'r']);
+                end
                 jobs{2}.stats{1}.fmri_spec.sess.cond.name = 'active';
                 %
                 if exp == 1  % 10 s boxcar
@@ -233,7 +223,6 @@ for file_number = 1:11
                 jobs{2}.stats{4}.results.conspec.thresh = 0.001; % for cluster based threshold
                 jobs{2}.stats{4}.results.conspec.extent = 0;
                 
-                matlabbatch{1}.spm.stats.fmri_spec.global = 'Scaling';
                 save('rest_batch_analysis.mat','jobs');
                 
                 error2 = 0;
@@ -242,6 +231,29 @@ for file_number = 1:11
                 catch err
                     err
                     error2 = 1;
+                end
+                
+                % Move SPM.mat
+                spm_file = fullfile('D:\Smoothness_estimation\Data\func_only_1\classical','SPM.mat');
+                if exist(spm_file,'file')==2
+                    
+                    if smoothing == 17
+                        % No smoothing
+                        smoothmm = num2str(0);
+                    else
+                        smoothmm = num2str(smoothings(smoothing));
+                    end
+                    
+                    if file_number < 10
+                        movefile('D:\Smoothness_estimation\Data\func_only_1\classical\SPM.mat',['D:\Smoothness_estimation\Results\SPM_000' num2str(file_number) '_smoothing' smoothmm 'mm.mat'  ])
+                    elseif file_number < 100
+                        movefile('D:\Smoothness_estimation\Data\func_only_1\classical\SPM.mat',['D:\Smoothness_estimation\Results\SPM_00' num2str(file_number) '_smoothing' smoothmm 'mm.mat'  ])
+                    elseif file_number < 1000
+                        movefile('D:\Smoothness_estimation\Data\func_only_1\classical\SPM.mat',['D:\Smoothness_estimation\Results\SPM_0' num2str(file_number) '_smoothing' smoothmm 'mm.mat'  ])
+                    else
+                        movefile('D:\Smoothness_estimation\Data\func_only_1\classical\SPM.mat',['D:\Smoothness_estimation\Results\SPM_' num2str(file_number) '_smoothing' smoothmm 'mm.mat'  ])
+                    end
+                    
                 end
                 
             end
